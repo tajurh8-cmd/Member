@@ -1,4 +1,4 @@
-const CACHE_NAME = "barcode-acak-pwa-v3";
+const CACHE_NAME = "barcode-acak-pwa-v5";
 const APP_FILES = [
   "./",
   "./index.html",
