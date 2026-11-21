@@ -1,27 +1,28 @@
-QR GENERATOR NOMOR ACAK — PWA OFFLINE
+BARCODE GENERATOR NOMOR ACAK — PWA OFFLINE
 
 ISI PAKET
-- index.html              Aplikasi QR Generator
+- index.html              Aplikasi Barcode Generator (Code 128)
 - manifest.webmanifest    Identitas aplikasi PWA
 - sw.js                   Service worker untuk cache/offline
 - icons/                  Ikon aplikasi
 
-CARA UPLOAD KE INFINITYFREE
-1. Ekstrak ZIP ini di HP/PC.
-2. Buka File Manager hosting atau FTP.
-3. Masuk ke folder htdocs domain/subdomain yang dituju.
-4. Upload SEMUA isi folder qr_generator_pwa ke dalam htdocs.
-   Pastikan index.html, manifest.webmanifest, dan sw.js langsung berada di htdocs,
-   bukan berada di dalam subfolder qr_generator_pwa.
-5. Buka alamat domain melalui Chrome Android menggunakan HTTPS.
-6. Tunggu halaman selesai dimuat sekali saat online.
-7. Pilih menu Chrome (titik tiga) > Install app / Tambahkan ke layar utama.
-8. Jalankan ikon QR Acak dari layar depan. Setelah cache pertama berhasil,
-   aplikasi dapat dibuka offline.
+FITUR
+- GENERATE BARCODE ACAK: memilih nomor dengan putaran acak.
+- PANGGIL NOMOR PILIHAN: memilih nomor tertentu dari daftar.
+- Semua nomor diacak per putaran; pada mode random satu putaran selesai sebelum nomor berulang.
+- Panggilan manual dihitung ke batas harian dan menghapus nomor itu dari antrean random yang masih menunggu.
+- Maksimal 5 kali per nomor per hari, baik panggilan random maupun manual.
+- Barcode Code 128 tertanam untuk semua nomor sehingga dapat dibuat offline.
+- Hitungan pemakaian tersimpan pada browser/perangkat yang sama.
+
+CARA UPDATE DI GITHUB PAGES
+1. Ekstrak ZIP.
+2. Ganti index.html dan sw.js di root repository dengan versi terbaru.
+3. manifest.webmanifest tetap digunakan; ganti juga bila tersedia di paket.
+4. Folder icons tetap di root. Jika sudah benar, tidak perlu diubah.
+5. Tunggu GitHub Pages selesai deploy, lalu buka ulang situs.
 
 CATATAN
-- PWA dan service worker memerlukan HTTPS (localhost untuk pengujian).
-- Jangan hanya mengunggah index.html; semua file dan folder harus ikut diunggah.
-- Riwayat batas pemakaian tersimpan pada browser/perangkat yang sama.
-- Jangan hapus data situs/browser jika ingin mempertahankan hitungan hari berjalan.
-- Penggunaan offline pertama kali memerlukan satu kali kunjungan online agar cache dibuat.
+- PWA memerlukan HTTPS.
+- Muat aplikasi sekali saat online agar cache terbaru tersimpan.
+- Jika aplikasi terpasang masih menampilkan versi lama, tutup aplikasi lalu buka kembali setelah refresh situs.

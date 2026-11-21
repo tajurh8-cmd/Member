@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "QR Generator Nomor Acak",
-  "short_name": "QR Acak",
-  "description": "Generator QR nomor acak dengan batas maksimal lima kali per nomor per hari.",
+  "name": "Barcode Generator Nomor Acak",
+  "short_name": "Barcode Acak",
+  "description": "Generator barcode Code 128 nomor acak dengan batas maksimal lima kali per nomor per hari.",
   "lang": "id-ID",
   "start_url": "./",
   "scope": "./",
