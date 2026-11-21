@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#b5121b">
+<meta name="description" content="Generator QR nomor acak dengan batas pemakaian harian dan mode offline.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>QR Generator Nomor Acak</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#202124;background:#f3f4f6}
+*{box-sizing:border-box}
+body{margin:0;padding:14px;min-height:100vh;display:flex;justify-content:center;align-items:flex-start}
+@media(max-width:420px){body{padding:10px}.app{padding:18px}#qr{width:220px;height:220px}.stats{gap:7px}.stat{padding:10px 6px}}
+.app{width:100%;max-width:460px;background:#fff;border-radius:18px;padding:22px;box-shadow:0 8px 28px #00000012}
+h1{font-size:22px;margin:0 0 6px;color:#b5121b}
+.sub{font-size:13px;color:#666;margin:0 0 20px}
+.result{border:1px solid #e4e4e7;border-radius:14px;padding:18px;text-align:center;background:#fafafa}
+#qr{width:230px;height:230px;margin:0 auto 14px;background:#fff;display:flex;align-items:center;justify-content:center}
+#qr img,#qr canvas{max-width:100%;height:auto}
+.number{font-size:25px;font-weight:700;letter-spacing:1px;margin:8px 0 4px;word-break:break-all}
+.small{font-size:12px;color:#666}
+button{border:0;border-radius:11px;padding:14px 16px;font-size:15px;font-weight:700;cursor:pointer}
+.primary{background:#b5121b;color:#fff;width:100%;margin-top:16px}
+.secondary{background:#f0f0f0;color:#333;width:100%;margin-top:9px}
+.stats{display:flex;gap:10px;margin-top:15px}
+.stat{flex:1;padding:12px;border-radius:11px;background:#f5f5f5;text-align:center}
+.stat strong{display:block;font-size:20px}
+.stat span{font-size:11px;color:#666}
+.note{font-size:12px;color:#666;line-height:1.5;margin:16px 0 0}
+.status{font-size:13px;color:#247344;min-height:18px;margin-top:10px}
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>QR Generator Nomor Acak</h1>
+  <p class="sub">Nomor dipilih secara acak dari daftar. Sistem putaran acak: seluruh nomor mendapat giliran satu kali sebelum ada nomor yang berulang. Setiap nomor maksimal 5 kali sehari. Bisa digunakan offline.</p>
+
+  <section class="result">
+    <div id="qr" aria-label="QR code"><span class="small">Tekan tombol untuk membuat QR</span></div>
+    <div class="number" id="number">—</div>
+    <div class="small" id="counter">Belum ada nomor yang dibuat hari ini</div>
+  </section>
+
+  <button class="primary" id="generate">GENERATE QR ACAK</button>
+  <button class="secondary" id="copy">SALIN NOMOR</button>
+  <div class="status" id="status" role="status"></div>
+
+  <div class="stats">
+    <div class="stat"><strong id="used">0</strong><span>Nomor sudah terpakai</span></div>
+    <div class="stat"><strong id="available">24</strong><span>Nomor masih tersedia</span></div>
+    <div class="stat"><strong id="total">120</strong><span>Sisa kuota hari ini</span></div>
+  </div>
+  <p class="note">Batas dihitung per nomor dan tersimpan di browser/perangkat ini. Versi ini memakai penyimpanan baru agar riwayat percobaan versi lama tidak terbaca. Hitungan otomatis mulai dari nol saat tanggal berganti. Jangan hapus data browser jika ingin mempertahankan catatan pemakaian hari ini.</p>
+</main>
+
+<script>const OFFLINE_QR_IMAGES = {"085218228425":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/UlEQVR4nO2XQQ7DIAwEZ6v+/8vbg4GEqMqhEMVK4RQ0l1nFsrHMyXmdwUUXXfRm+gZQfBtkebsldR7OiwEE8v6W1Xk8L6p/F7fbjVaX563nMJ1yOs/LK/rIOZ0n5G0h3UXO6Tyet7TkSNtuWZ1HqPblK/iLei4z1xbWPnVO52Fq4UhrwNilphM7j1AZIVllBKtWeWLnH2lJpvKo2p5WvtPqaiobCYGI2s5gdQU99Gf3LTqn87T9yG0/0lP7c7cfRd9iWxxyOk/bj8CR2c+ev+3Ul6SUyeo6akUl+yu9y2om7fYjgzFbw8rpPG0/iveVefD/lc9oTudFF100zgfCTE/fT8St3AAAAABJRU5ErkJggg==","082126412580":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/ElEQVR4nO2YwQ7CMAxDnxH//8vmkLTakOCwFhZV7YVFPsxWihNP5st5fAM3utGN3ow+ARTPRj5WVTkP68UAaopbVZXzuN7QCgK5V1U5T9Dbztt0qsl5ol6dJdfkPEFviGxqu+SanMf1piVjIfeqKucRVP5cVeU8jAqEhEDxU4HV79C4wsb04atF52/215ZFOJboLS7M+SL6hOhvCO5m5ZX7i9KZc4N2yi3N+Rp6cuRDXFh6n2x32OTF9tr/327KmRqcuaEo52n5yDompRtZ/QlVzODl9412HGuG5bX96hgC06PDt2tynpaPZOUXHa3a3/dE9K/3bnSjGx1HX028Ru6nvjXOAAAAAElFTkSuQmCC","087708956339":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABBUlEQVR4nO2XwY7DIAxE51X9/1+eHjApWWl7IdRWSk5Y78BMjMHG+vA9PsFNN900mT4liba2kIeoquZpv7IkIQxyjxJVrfYrmmcOr05V9UVK0r4Z1H/s1lB1KY3z3LsOiyEqqnneb2QVY405rql52u+7pzRjVFTzNG0JRQILJCBf1RIa9SuO3Bph3dXvQ5IM/WpuJcxIs1Sto1jIlk3rrkwBVeuoW98cFxVxqrNVLaGM8z7N5tt7Tc3Tfsf5CCP3v1BT82Xz0XE5OxJcU/MFtD+4sizMj8xH7ZbyPzRL1TqKY2KIfNdQdSU9z0fGfX3T+j3PR3KMSLet39P7+8V9N91003n6Ap8fTOKMji2GAAAAAElFTkSuQmCC","089602060111":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA+UlEQVR4nO2XzQ7EIAiEZzb7/q88e0CoPWwvVCXGJk1LvoND+BEoPDyfJ3jooYcupl8AoP0LhDqrqua0vxBgforQZRXVnPcXdJ/VW0U1v0jl2Tz53GWUj3TcubNoy2dLX7bajRmkpua8vxFVin1K19ScodR/q6rmNCVAkCBA+1RQNZCSAkTBryVWUDWMtm5lryzO61UNoRQAyiYMxjQpAzU1p/tzDFVUuL5U1aT+bMEGsO88eduP5EFerWrSfkRfGrh3/fpGpOhc29bvjdIG6LiOaqgaRyV6t9q6X8VGxOtC1kpVk/Yj+qDR3C2q+b39aN65hx56aJ7+AEioRekxUOxzAAAAAElFTkSuQmCC","089527170086":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABCUlEQVR4nO2Xu7LCMAxEz97h/395byEpkBQU2BCNx6mwT8Hu6GmZN9/fO7jpppveTB8Ait+WEa7Tjaq+7BcDCGTreeqqedwv6TJjW56bap7gNz7rMp16ap5GZVUtN1I1lWZ8I65WJPQR5Z6ax/1mUBWGnyHuqXmEXitWvF701DzsVz5GMMKoplJPzcPUAmzHJBJHBTfW/CGN/cpkZ3bY1bLzN/K5dipnPddFT80z+lUEV7iutGb9nvqz0jGyFu1Xp/cRYAlIu001z3wfKdNat6r6OpWOpcqSy3BrzR/Rx/lYbWvZ/nyiBhvJoLXjW13aGWKtms+1b8DLJrlwPl/fR7/630033XSc/gP5dlLa36QE7QAAAABJRU5ErkJggg==","085321717693":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/klEQVR4nO2YMQ7EIAwEZ6P8/8t7BYaE4tIQAkJQRFhTsJaNsSPzsI4nuOmmmw6mJ4DS3gJcrIGqOvuLAQQGuVizam73N3zNkc7WpJpfoxb+T/udO4pq0Lkf0shnx1e6rIGqevsbgZWx7mGeU3MLVX1hRXWD59Tc7K9uj64wslZ9fw+IumzbiCqjJ9bcQmWp1KrUZE2gqh91qcoWTkXLw1V1pAZJluVIZi/aT1b1WbnDyjk9p+bX5iMsK4akRfO5no/iIVKO+pyaX6BSaapSrV71/p61eSXz0vkcy7nbYtn+qpqPAFD6xbF0Pl/zkey8Hajqs/nos3M33XTTdvoDnHNQ3u/OmNYAAAAASUVORK5CYII=","089509618212":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/ElEQVR4nO2XuxKFMAhEd+/4/7+8t4A8bGwkgXFioeIWOTvBABQert+TeNSjHjVZvQCA9i6KGlEi1WK/EGA+BWpERZnf+wUnzyMqyhymijnrZql9Xzevu1H1fFa7c0SJVKv9eh5TFHuUSLVO5S2B7YjOp1rsl+p7KkKg+On66/bMsyb3NZlD+iuaU6tJLadrMr//f721smyevtdkDlAlkABHSfpoP3k7n3vxbTldkzlsPoIo9rEhkWrXfOSFiB8/n3vnLFgFpm9wTeY41X7gUZJqUEWq1xzYrhLwk7ooc9h81Los7yirMsfNRxAlf2ZS7ZqP9q171KMe9b36B20STd8xM5oXAAAAAElFTkSuQmCC","085156975745":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABAklEQVR4nO2XQQ7DIAwEZ6v+/8vbgx1SKjWXQEAIKjWlc2BXdmwsc7FeV3DTTTcdTN8Ait/W+Q0eqKqzXwyg4jh3s2q+7xeFS4Xj3M2quRl1SeZnzx1FZfk/7XfugzTzOWxanC/wSFW9/WYWy7LKbqCqfrROYPEV3IGqOvuVS0wtjKxV+29SYRtjqhI9teZ7VPmJBuxJVDWnOq9WeeGIv+M5p+bbNEIqhU0B9qL3yao+y0dgl61X1XyUUebI7kk1t5uPiEZUKvScmlvOR9GBlTfpOTU38JvLYVxm6fp8LIMzm7Vofa7mI1Re3lX70c98hOwYkxbN558B/7FzN9100/v0AzfITuC38PTLAAAAAElFTkSuQmCC","083183008777":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABBElEQVR4nO2Xuw7EIAwEd073/7+8VxiSI0UaQrAQSYM1BWv5gY11833u4KabbjqZfiWJOFvC+LSSau72V5YkhCUf1kRVo/0V4SgWrtZEVe9RfEfH3TuFYmotJ1L1KC35HFE1xoc1UdVof0tQCYfPEOfU3EPbeuUyXebU3E0pf5wlasQTa+6iSMIgMMLIi76/QS1k5DppuKGzVI2jWMKOXLYQ4XJmzZ3UpWpLqFk0n5uOHM9vRHjR+GL97Ud1fq6DR07Nj+1HcUSuUc+p+QEK5d0VMVamUDWaWkQqU+o6hapxlHPvX3vekB170dGZV+3P7X4ky0T1LtqfrxvRW/duuumm/fQHwBFS5Ti7nO8AAAAASUVORK5CYII=","085721660950":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/0lEQVR4nO2XwW7GIAyDP097/1f2DoR0+w89DFoiBEhtIh+wFRISmZv1dQce9KAHXYx+A6jZRoDTq8p5WC8GEDIovYWsntYbKo1sLs1FOc9DlXf73XMXoZ9ya7CaisZ9btfXspzeQlZP642oqgm+YlyT8wgq37k1OQ+jit0TOPO4MOd/ouqPbfs79rbvUfQbaq2VI7qE4pqcp8Q3NCq1rmT1eP9sQBbC6rIXsnqpPvdgu5s1OQ/rveYjt5mhC67Jedp8hGUjtq/Pka9qIXY2WDU5T9DblrOl3DZ//85Hgp69e8/7zq9+2UU5T6vPsnA8vZvW54+B6LVzD3rQg46jP8bjU+Ccf79IAAAAAElFTkSuQmCC","083179512463":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABB0lEQVR4nO2Xyw6DMAwEZ1H//5e3B5tHK5VDCcSKwiVN55BdbBNb5uRZzuCkk07amb4AFL8t8L7rqOpmvxhAuW67qpqv+129ysoIu6uqh6gt/6b3nduLqtO5D9LM5yxcWfuuo6q7/WZgFYb3MNfUfIV+FSzi+EdNzZf9yhlTh2HlTVxUc4P6ha1q8xvtnqpuz2dhhI/LmPGNfAYIj2s9a9D4LhC5awuk6K6UF1NhzX/SQ/9swMK59lT10HyEZQnwsN+rz/koRwWtb6Cm5gZUCrcGSxZj1+/2RDJnSlfV3Mxv3sW2sq+sqbnZfJSdpWDYfD70Gzj7DW1NZU3NLeejp86ddNJJr9M3P11T2nLf+pcAAAAASUVORK5CYII=","085794567668":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/UlEQVR4nO2XQQ7DIBADPVX+/2X3sFCSVuqFwKKIXJJlDrGFYQHrz/P6BzfddNNkekgS8W0hn6pVNXf7lSUJISPXKlHVaL+iejanalHNN1KT899p9DgXP714Tc03+K1OI88f32tq7vdbUozPVaKqwX5bjs0l1Wtq7qYxoUiSBRKQr2ogRYAxMb3IT+2/dck6mi4yFiZSvabmG6gpDuN0xZVmqRpHsRRxjjTbz85zKeLVhtbU3O23+cSftZupatL9SBJ69n71dT+q27NzVc2ilD26JnwNVXfS43ugNeJEVeP7r9tVoQR7AVUD6GV/xnG+Slc1qf9O/O+mm27aT9/EwkrevNYbRwAAAABJRU5ErkJggg==","085281116554":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/klEQVR4nO2XQQ7DIAwEZ6v8/8vbA4RA2uYCFISIlCjWHNgVxsYyD8/rCW666aaD6QGg8G+Br2igqs5+MYDAkq9oVs31flF0CXIWzam5GbXwb9pv3VFU92Y8haqmNOazz6+uaKCq3n5jSZaxUjRQVT9aprCgOMFzaq72K6c9tTCKnXhSzS2osQlvltGjVXWiBlkChHWno1R1oUqXKQe34fjGRjyn5moqjFFyjexF75NFfU7N96zTc2puNh9h4i4vm8/lfBQ3VuvW53I+yvZWa+bzF2pr3fp85EHoRiIZnlNzs/kIy2cTXrQf3ecj2eE6vWg+f4z4f1p30003radvh7FO2ftHmYIAAAAASUVORK5CYII=","087723599277":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA90lEQVR4nO2XsQ7EMAhD7er+/5d9AyRpb+jQJA3K0aEqekOMKBBTuHmOO5g0adLF9AMAtG8BBNSioJq784UAy1qXKKjm/nzBlqVaFFTzOErd0XnnJp1F/X+2ulKnBl6pana+LCFFtSio5h567dg/6V8CBAmKJLeu7wFYv9IvGraWuOv+9fpSNWMRLBMrsOaH1OeVbFDpNLpWqpqcr41km8xiiReqemP/CnXxlj0cVHP3PvrxR9q+f90reF1ZXzE1D/NHon+VoRVT8zDqDrjawRiq5lF5ZTf2vxd/BFjf+iqOqnmYP7LePV2wYmoe54/eOzdp0qT99Au/7kPqJ+gj0QAAAABJRU5ErkJggg==","081996257430":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABBElEQVR4nO2YsXKFMAwEdzP5/1++FJYhNK/BDh5iCsCzhU9zkpEwfLi+PsFNN930YfoNYHsPGHOuFtV8O14CIII5Vg+qmh0vQiDltBXzoprHUfOJztv3IWrL6cVUDaWVz+l3c6weVDU73jLVGPPL4jU136HXiv0n9Wuv3DSr7Y4vrPkODb1qNWK60QtrvkNF0frstq7jpf2GFeGRyxB5b79xnFBCpLXPR8Rrah5Ck0Av5f54XNVweubzMR+V1+/09zIfYQhWsA+qmk5VwFjeuoSq2TRWS2k5vISqebSm31bHy6gaSq/zkVFy/uRYU/O4+QiIJtTBvabmcfPR3+276aab3qc/AgRR4lbGe/oAAAAASUVORK5CYII=","081221520718":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABBElEQVR4nO2YsRKEIAxE397c///yXgFBr7ERTMbBwjG8gt0hkKDMxfO5gptuumky/QKofRtheURVNd/2iwHU7I4oUdVqvyhcWj6ioprnUUdqPzxvErWu6Lp5H6Q9n3vX0U+r0YPU1Hzfb19X+RwlqlpHde4nhcV5oKbm27QtqACMBJLyVa2kQjJRiXpNSle1gCqaC6NosBhJXVPzhP2rZvPUWzlT1WK/kb8+htq7puaJ5zMQqZ2pavX6tu/ooN/fb8SulYV8eK6peUY9Uq++xow7Ybaqh+iwW0rVHPr9D+VWg3n3/41YTxmw5H5u19Q8737UGw/Lb92/f/X3wXk33XTT+/QHclxO2D10jyMAAAAASUVORK5CYII=","081322786384":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA+0lEQVR4nO2XsQ6EMAxD7RP//8u+IUnp3dCFlEZVWSB6AzaJSE1hcH1G8NBDD11MLwCgPYsCqKgWqprsFwIAwq16tVDVbL+gu/yrampOo1z03nVUQzrvva9Rn2fFTUTnuqbm537bIFN9VVTzY7/9FKuvamp+Qq2hbe8KsZK45/7tqCBrrcJ1BVXJlPfhwuaae8/zfZ5Uu1OUfYeamhOoBBKCINAMF1A1gbL/N0efEWNdU3NaPrKIRE9KC1W9lY9gdkHt2l+nJGF95t776IdG1G8rqYSqVHr9lgL6yFBTc2I+8qTvx8mimtPyESWG1U3Pz9SI1tR86KGH2vUFDOhN0xA6Dy0AAAAASUVORK5CYII=","087877334104":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABAElEQVR4nO2YuQ7EIAxE36zy/788W5gjNFtsICBEmmC9grHs+IjMj+fzCx566KGT6QWgOBsBLtaqmh/7iwGELKtYE1WN9pfkZftaVXM/6pzaL987iVq0Di+hqitN+ZynjlSyZqsa7W8KqixzD/Gamh/7W2fKUp7nqhpMI6ACZCSQNF/VSKpovhgMyjFeWvNfVGm4cByFdatZa2ruQC2wkI0BbxvfSiOlScH2pvOk3BiCaMK7zpPNfmQZWdp+3qgbkYh6pb3rVWq40ZJy1ZquajiNqLp81Wuo6kmvxrLsnNc7/9+4z8wYWbvOG/eFKJVn15VwTc3d+u+L9x566KHP6Rd27VDeUicHYgAAAABJRU5ErkJggg==","081573187305":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA/ElEQVR4nO2XTQ+EIAxE5232///l2QMfYrLxIAoNwYPavENnBFuKdXF9ruCmm246mX4lifSef+Umiqm5229yioTkI4qqud9vNorxEU1UNYpimJF3GuWSvpd3GM372fXBEUXV3O+3Lituo6Cau/0eZ0rTRkE19/dfI0m2MGl5l67PJrVdslU7fYDImm9S2kOVhYxrHw6qudtvNe1Sr7LhmJof2M9IICFEU7ACa75Jaef90ojMsvXqNB8ZGZPa0kxVg+YjTGlHLD0PlokICwvhVffzf+pL+l7e4RSMXAtXEFUP0tN85HTDpSnF1PzYfIQkY69+vpqQd9NNN+2nP8G+TOKmzyZbAAAAAElFTkSuQmCC","083827450679":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA9klEQVR4nO2Yuw7FIAxD7av+/y/7DkmALiw8GiE6VI3OgCOTQEqh8/x68NJLL/2YPgBA+xZAtVFSzcP5QoDlKVA1Sqp5PF/QcqbYRFk1T6Xq0nXrfkLFqN696+6jvp/N1ajd4nFOzeP5NqZSTZRT8wilemFOzcOUAEGCEMmj/S2UsmbllXzq+evU71VC9GhmULWAUgDoV0kCitskz7xPhr9uqaUp6Wh/X0FNO6vmafOR72iVBp1T87T5iLIPxSun5mnzkbxn4dz+/KI2AddTOIeqdVRilO7R/ar4yfpHR1+q2jQfRaOK4yip5onz0bZ1L7300nH6B+mmReSn3SZSAAAAAElFTkSuQmCC","087748195196":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA+klEQVR4nO2Yyw6DMAwEZyv+/5e3hzgBoaoHXrFCAAHRHNiVDbaR+bN9/sFJJ520M10AVO4NCG9WOTWf9osBhIzXVUdVd/tFYLAsXFcdVT1F98Uph6or6bJd6LnndvZbAutI5BbmnJrP+43AyrK8CXNOzWeo3thPKvY46iW15oNUrdgaGWGVqqQx+40SX4ddIMwPHt9wKwivg/cbwkiR1hhr0H6yULudavF1f1V30DWN6xfLrQ5n1XzZfARyyefOqu5/f1XcltlIO9pL1d3UUX1rOudQdSn9MR/JYux+A9w+zmLzkyO15kN0Nx+BJdd3OanmOR9NOuk76RdCqlfVJJ+LiAAAAABJRU5ErkJggg==","081513173725":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABAUlEQVR4nO2YMRLDIAwE7zL5/5c3BQLsFC4CDhoPFBh5C+4MI4SNLtrrCm666aaL6VuSXMaYY7RQ1c1+VX1aGHXXOTWP+5XDc3m0KKfmaRThFfOuotaX4RSqptLYz9TePVqo6m6/sajGuEULVd1HzTmyji9yah72a2JNkSxk/NTzt1BbEtAyFhlU3UHrfu4mLVxrrZyah6llAY6BqN8hseYfaZTMHFbYRF2ZVfO0/FycqnvPqXk8P5cxrb6qx1JOzfPuR9QuysqcmidQuxVV2FTDqTVPoGUzY/Ts/Ryt2Ixk/cx8dbofhVUjnv1/o9+PBGrHb1LN8+5H/5t30003HacfvylW0eq9c/8AAAAASUVORK5CYII=","089524442241":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAABBUlEQVR4nO2XsQ6EMAxD/U78/y/7hjQIbmC4UhqhMlG9oTZJiot18Xyu4KKLLjqZbpJEvFtCPqyKau72K0vh2hxXRTX3+xXhEhnvq6qab6TGF3TcvrMoOb0P7/sYbf0cVc0+3mtcU3O/3yyqET6UuKbmHnqeV37SZU3N3RQJgRDAq+u7SZKR5QgcRhE7Zqoa3M+ZqHDLV26Ga2q+4XyWZOE9TTo+RE3N3dR2tDJh0znDhTX/SU8nMs6/keeqemh+hZExGStrar7tftTaGaO3zu/pfmSObxNVPUTb5Ze0W0PVOOp2WiG/dX4bdRjEwlYO8mxVA+jpfsSeOt6dJyfsu+iii/bTL0mWUtxIXyQvAAAAAElFTkSuQmCC","087825234039":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOgAAADoAQAAAADN0pXVAAAA+UlEQVR4nO2XQQ7DIAwEZ6v+/8vbgwkhrZRDSYKFyAFizYG1sI0tc/K9zuCiiy46mL4BFP9GWK5WVs3d/mIAlb1aWTX3+1t8Fdg0nufUfCWVxpy76D20xLPrpt3Kqrnf3xrEcmsl1dxD1faTguZyB6q6+/2NN9eWUet1Ts3d1MJ4bzSMNen7GwnrKFMyKktccE7N/f6W8NXeaGlSfwsVQsISwrVmpdb8F/2tz5R8Hqnqofkoclmwla6cmi+bjxQbtWDl1HzZfASOWu1p4/mL6pTed+4gasuq2ZtF1ZV06zdirdV62n7jMB/F5Xrm/D28vw+eu+iii/bTD9pOTdg9AI6oAAAAAElFTkSuQmCC"};</script>
+<script>
+const numbers = [
+"085218228425",
+"082126412580",
+"087708956339",
+"089602060111",
+"089527170086",
+"085321717693",
+"089509618212",
+"085156975745",
+"083183008777",
+"085721660950",
+"083179512463",
+"085794567668",
+"085281116554",
+"087723599277",
+"081996257430",
+"081221520718",
+"081322786384",
+"087877334104",
+"081573187305",
+"083827450679",
+"087748195196",
+"081513173725",
+"089524442241",
+"087825234039"
+];
+const LIMIT = 5;
+const STORE_KEY = "qrRandomUsageV2_clean_start";
+const today = () => {
+  const d = new Date();
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+};
+function loadUsage(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    if(saved.date !== today()) return {};
+    return saved.counts || {};
+  }catch(e){ return {}; }
+}
+let savedState = loadState();
+let counts = savedState.counts || {};
+let queue = savedState.queue || [];
+let currentNumber = savedState.currentNumber || "";
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    if(saved.date !== today()) return {counts:{},queue:[],currentNumber:""};
+    const cleanCounts = {};
+    for(const n of numbers){
+      const value = Number(saved.counts && saved.counts[n] || 0);
+      cleanCounts[n] = Number.isInteger(value) ? Math.max(0, Math.min(LIMIT, value)) : 0;
+    }
+    const cleanQueue = Array.isArray(saved.queue)
+      ? saved.queue.filter((n,i,a) => numbers.includes(n) && a.indexOf(n) === i && cleanCounts[n] < LIMIT)
+      : [];
+    return {
+      counts: cleanCounts,
+      queue: cleanQueue,
+      currentNumber: numbers.includes(saved.currentNumber) ? saved.currentNumber : ""
+    };
+  }catch(e){ return {counts:{},queue:[],currentNumber:""}; }
+}
+function saveUsage(){
+  localStorage.setItem(STORE_KEY, JSON.stringify({
+    date:today(), counts, queue, currentNumber
+  }));
+}
+function makeShuffledRound(){
+  // Satu putaran berisi seluruh nomor yang masih memiliki jatah,
+  // diacak satu kali sehingga semua mendapat giliran sebelum putaran berikutnya.
+  const round = numbers.filter(n => (counts[n] || 0) < LIMIT);
+  for(let i=round.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [round[i],round[j]] = [round[j],round[i]];
+  }
+  if(round.length > 1 && round[0] === currentNumber){
+    const j = 1 + Math.floor(Math.random()*(round.length-1));
+    [round[0],round[j]] = [round[j],round[0]];
+  }
+  return round;
+}
+function updateStats(){
+  const used = numbers.filter(n => (counts[n] || 0) > 0).length;
+  const available = numbers.filter(n => (counts[n] || 0) < LIMIT).length;
+  const remaining = numbers.reduce((sum,n)=>sum + Math.max(0,LIMIT-(counts[n]||0)),0);
+  document.getElementById("used").textContent = used;
+  document.getElementById("available").textContent = available;
+  document.getElementById("total").textContent = remaining;
+}
+function generate(){
+  // Reset otomatis saat tanggal lokal berganti.
+  const fresh = loadState();
+  const dateNow = today();
+  if(window.__qrLastDate !== dateNow){
+    counts = fresh.counts || {};
+    queue = fresh.queue || [];
+    currentNumber = fresh.currentNumber || "";
+    window.__qrLastDate = dateNow;
+  } else {
+    counts = fresh.counts || {};
+  }
+  const remaining = numbers.filter(n => (counts[n] || 0) < LIMIT);
+  if(!remaining.length){
+    document.getElementById("status").textContent = "Semua nomor sudah mencapai batas 5 kali untuk hari ini.";
+    updateStats();
+    return;
+  }
+  // Habiskan satu putaran berisi semua nomor sebelum memulai putaran acak berikutnya.
+  // Nomor yang sudah mencapai 5 kali otomatis tidak dimasukkan ke putaran baru.
+  queue = queue.filter(n => (counts[n] || 0) < LIMIT);
+  if(!queue.length) queue = makeShuffledRound();
+  currentNumber = queue.shift();
+  counts[currentNumber] = (counts[currentNumber] || 0) + 1;
+  saveUsage();
+
+  const qr = document.getElementById("qr");
+  qr.innerHTML = "";
+  const qrImage = OFFLINE_QR_IMAGES[currentNumber];
+  if(qrImage){
+    const img = document.createElement("img");
+    img.src = qrImage;
+    img.alt = "QR Code nomor " + currentNumber;
+    img.width = 220;
+    img.height = 220;
+    qr.appendChild(img);
+  }else{
+    qr.innerHTML = '<span class="small">QR Code tidak tersedia.</span>';
+  }
+  document.getElementById("number").textContent = currentNumber;
+  document.getElementById("counter").textContent = "Nomor ini sudah keluar " + counts[currentNumber] + " dari 5 kali hari ini";
+  document.getElementById("status").textContent = "QR berhasil dibuat.";
+  updateStats();
+}
+document.getElementById("generate").addEventListener("click",generate);
+document.getElementById("copy").addEventListener("click",async()=>{
+  if(!currentNumber){document.getElementById("status").textContent="Generate nomor terlebih dahulu.";return;}
+  try{await navigator.clipboard.writeText(currentNumber);document.getElementById("status").textContent="Nomor berhasil disalin.";}
+  catch(e){document.getElementById("status").textContent="Salin manual nomor yang tampil di layar.";}
+});
+updateStats();
+window.__qrLastDate = today();
+
+// Daftarkan service worker agar aplikasi dan asetnya tersedia saat offline.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(err => {
+      console.error("Service worker gagal didaftarkan:", err);
+    });
+  });
+}
+</script>
+</body>
+</html>

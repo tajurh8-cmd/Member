@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "QR Generator Nomor Acak",
+  "short_name": "QR Acak",
+  "description": "Generator QR nomor acak dengan batas maksimal lima kali per nomor per hari.",
+  "lang": "id-ID",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f6",
+  "theme_color": "#b5121b",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

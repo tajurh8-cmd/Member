@@ -1,0 +1,27 @@
+QR GENERATOR NOMOR ACAK — PWA OFFLINE
+
+ISI PAKET
+- index.html              Aplikasi QR Generator
+- manifest.webmanifest    Identitas aplikasi PWA
+- sw.js                   Service worker untuk cache/offline
+- icons/                  Ikon aplikasi
+
+CARA UPLOAD KE INFINITYFREE
+1. Ekstrak ZIP ini di HP/PC.
+2. Buka File Manager hosting atau FTP.
+3. Masuk ke folder htdocs domain/subdomain yang dituju.
+4. Upload SEMUA isi folder qr_generator_pwa ke dalam htdocs.
+   Pastikan index.html, manifest.webmanifest, dan sw.js langsung berada di htdocs,
+   bukan berada di dalam subfolder qr_generator_pwa.
+5. Buka alamat domain melalui Chrome Android menggunakan HTTPS.
+6. Tunggu halaman selesai dimuat sekali saat online.
+7. Pilih menu Chrome (titik tiga) > Install app / Tambahkan ke layar utama.
+8. Jalankan ikon QR Acak dari layar depan. Setelah cache pertama berhasil,
+   aplikasi dapat dibuka offline.
+
+CATATAN
+- PWA dan service worker memerlukan HTTPS (localhost untuk pengujian).
+- Jangan hanya mengunggah index.html; semua file dan folder harus ikut diunggah.
+- Riwayat batas pemakaian tersimpan pada browser/perangkat yang sama.
+- Jangan hapus data situs/browser jika ingin mempertahankan hitungan hari berjalan.
+- Penggunaan offline pertama kali memerlukan satu kali kunjungan online agar cache dibuat.
